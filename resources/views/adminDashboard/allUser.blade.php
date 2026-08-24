@@ -307,7 +307,7 @@
                     <th>Department</th>
                     <th>City</th>
                     <th>State</th>
-                    <th width="60">Profile</th>
+                    <th width="80">Actions</th>
                 </tr>
             </thead>
 
@@ -327,10 +327,23 @@
                         <td class="searchable-city">{{ $user->city ?? '-' }}</td>
                         <td class="searchable-state">{{ $user->state ?? '-' }}</td>
                         <td class="text-center">
-                            <a href="{{ route('admin.user.profile', $user->id) }}"
-                                class="btn btn-outline-info btn-sm">
-                                <i class="fas fa-eye"></i>
-                            </a>
+                            <div class="btn-group">
+                                <a href="{{ route('admin.user.profile', $user->id) }}"
+                                    class="btn btn-outline-info btn-sm" title="View Profile">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ route('admin.user.profile.edit', $user->id) }}"
+                                    class="btn btn-outline-primary btn-sm ml-1" title="Edit Profile">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form action="{{ route('admin.user.profile.delete', $user->id) }}" method="POST" class="d-inline ml-1" onsubmit="return confirm('Are you sure you want to permanently delete this student? All their academic records, resume, and placement applications will be deleted permanently. This action cannot be undone.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete User">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 @endforeach

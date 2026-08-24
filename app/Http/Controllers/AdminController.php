@@ -2781,4 +2781,161 @@ public function indexdb()
             return back()->with('error', 'Error updating status: ' . $e->getMessage());
         }
     }
+
+    public function adminUserProfileEditShow($userId)
+    {
+        $user = DB::table('users')->where('id', $userId)->first();
+        if (!$user) {
+            abort(404, 'User not found');
+        }
+
+        $profile = DB::table('users_profile')->where('user_id', $userId)->first();
+
+        if (!$profile) {
+            $profile = (object) [
+                'bio' => null,
+                'gender' => null,
+                'date_of_birth' => null,
+                'roll_number' => null,
+                'college' => null,
+                'course' => null,
+                'department' => null,
+                'passing_year' => null,
+                'cgpa' => null,
+            ];
+        }
+
+        $colleges = DB::table('college')->get();
+        $courses = $profile->college ? DB::table('courses')->where('college_id', $profile->college)->get() : collect();
+        $departments = $profile->course ? DB::table('departments')->where('courses_id', $profile->course)->get() : collect();
+
+        return view('adminDashboard.edit_user_profile', compact('user', 'profile', 'colleges', 'courses', 'departments'));
+    }
+
+    public function adminUserProfileUpdate(Request $request, $userId)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $userId,
+            'phone' => 'nullable|string|max:20',
+            'gender' => 'required|in:male,female,other',
+            'date_of_birth' => 'required|date|before_or_equal:today',
+            'roll_number' => 'required|string|max:50',
+            'college_id' => 'required|exists:college,id',
+            'course_id' => 'required|exists:courses,id',
+            'department_id' => 'required|exists:departments,id',
+            'passing_year' => 'required|integer|min:2000|max:2030',
+            'cgpa' => 'required|numeric|min:0|max:10',
+            'is_reappear' => 'required|in:0,1',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'country' => 'nullable|string|max:100',
+            'bio' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            DB::table('users')->where('id', $userId)->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'city' => $request->city,
+                'state' => $request->state,
+                'country' => $request->country,
+                'is_reappear' => $request->is_reappear,
+                'updated_at' => now(),
+            ]);
+
+            $profileData = [
+                'gender' => $request->gender,
+                'date_of_birth' => $request->date_of_birth,
+                'roll_number' => $request->roll_number,
+                'college' => $request->college_id,
+                'course' => $request->course_id,
+                'department' => $request->department_id,
+                'passing_year' => $request->passing_year,
+                'cgpa' => $request->cgpa,
+                'bio' => $request->bio,
+                'updated_at' => now(),
+            ];
+
+            $existingProfile = DB::table('users_profile')->where('user_id', $userId)->first();
+            if ($existingProfile) {
+                DB::table('users_profile')->where('user_id', $userId)->update($profileData);
+            } else {
+                $profileData['user_id'] = $userId;
+                $profileData['created_at'] = now();
+                DB::table('users_profile')->insert($profileData);
+            }
+
+            DB::commit();
+            return redirect()->route('admin.user.profile', $userId)->with('success', 'User profile updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Admin failed to save user details: ' . $e->getMessage());
+            return back()->with('error', 'Failed to save details: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    public function adminUserProfileDelete($userId)
+    {
+        $user = DB::table('users')->where('id', $userId)->first();
+        if (!$user) {
+            return back()->with('error', 'User not found!');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // 1. Delete physical files from disk if they exist
+            // Resume files
+            $resumes = DB::table('users_resume')->where('user_id', $userId)->get();
+            foreach ($resumes as $resume) {
+                $resumeFullPath = public_path($resume->resume_path);
+                if (file_exists($resumeFullPath)) {
+                    @unlink($resumeFullPath);
+                }
+            }
+
+            // Profile picture
+            if ($user->profile_picture) {
+                $profilePicPath = public_path($user->profile_picture);
+                if (file_exists($profilePicPath)) {
+                    @unlink($profilePicPath);
+                }
+            }
+
+            // Cover photo
+            if ($user->cover_photo) {
+                $coverPhotoPath = public_path($user->cover_photo);
+                if (file_exists($coverPhotoPath)) {
+                    @unlink($coverPhotoPath);
+                }
+            }
+
+            // 2. Delete related records from all database tables
+            DB::table('users_profile')->where('user_id', $userId)->delete();
+            DB::table('users_skills')->where('user_id', $userId)->delete();
+            DB::table('users_resume')->where('user_id', $userId)->delete();
+            DB::table('academic_history')->where('user_id', $userId)->delete();
+            DB::table('user_projects')->where('user_id', $userId)->delete();
+            DB::table('user_experience')->where('user_id', $userId)->delete();
+            DB::table('drive_notifications')->where('user_id', $userId)->delete();
+            DB::table('saved_drives')->where('user_id', $userId)->delete();
+            DB::table('user_profile_track')->where('user_id', $userId)->delete();
+            DB::table('placement_applications')->where('student_id', $userId)->delete();
+
+            // 3. Delete the user record
+            DB::table('users')->where('id', $userId)->delete();
+
+            DB::commit();
+            return redirect()->route('admin.users.all')->with('success', 'Student and all related records deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Admin failed to delete user: ' . $e->getMessage());
+            return back()->with('error', 'Failed to delete student: ' . $e->getMessage());
+        }
+    }
 }
+

@@ -441,11 +441,25 @@
     </style>
 
     <!-- Admin Header -->
-    <div class="admin-header mb-3 p-3 bg-light rounded">
-        <a href="{{ url()->previous() }}" class="btn btn-secondary btn-sm">
-            <i class="fas fa-arrow-left"></i> Back to Applications
-        </a>
-        <span class="ms-3 text-muted">Admin View: {{ $user->name }}'s Profile</span>
+    <div class="admin-header mb-3 p-3 bg-light rounded d-flex justify-content-between align-items-center">
+        <div>
+            <a href="{{ url()->previous() }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Applications
+            </a>
+            <span class="ms-3 text-muted">Admin View: {{ $user->name }}'s Profile</span>
+        </div>
+        <div>
+            <a href="{{ route('admin.user.profile.edit', $user->id) }}" class="btn btn-primary btn-sm mr-2">
+                <i class="fas fa-user-edit mr-1"></i> Edit Profile
+            </a>
+            <form action="{{ route('admin.user.profile.delete', $user->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to permanently delete this student? All their academic records, resume, and placement applications will be deleted permanently. This action cannot be undone.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger btn-sm">
+                    <i class="fas fa-trash mr-1"></i> Delete Profile
+                </button>
+            </form>
+        </div>
     </div>
 
     <!-- Your Exact Profile UI -->
