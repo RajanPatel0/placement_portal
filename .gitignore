@@ -1,0 +1,48 @@
+/node_modules
+/vendor
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.phpunit.cache
+
+# Caches and logs
+/bootstrap/cache/*
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+
+# User-uploaded files
+/public/cover_photos/*
+/public/notification_attachments/*
+/public/profile_pictures/*
+/public/resumes/*
+/public/uploads/*
+
+# Global exception to keep .gitkeep files
+!**/.gitkeep
+
+# IDEs
+/.idea
+/.vscode
+/.fleet
+
+# Miscellaneous local folders
+/build
+/dist
+/directories
+/uploads
+profile_pictures
+resumes
+uploads
