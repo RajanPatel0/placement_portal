@@ -523,12 +523,14 @@ public function getSliders()
                 $email = $data[1];
                 $emails[] = $email;
 
-                $users[] = [
+                 $users[] = [
                     'name' => $data[0],
                     'email' => $email,
                     'phone' => $data[2],
                     'role' => 'user',
                     'password' => Hash::make($data[4]),
+                    'is_active' => 1,
+                    'is_verified' => 1, // for imported users, we assume them as verified and active
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -2935,6 +2937,44 @@ public function indexdb()
             DB::rollBack();
             \Log::error('Admin failed to delete user: ' . $e->getMessage());
             return back()->with('error', 'Failed to delete student: ' . $e->getMessage());
+        }
+    }
+
+    public function adminUserToggleActive($userId)
+    {
+        try {
+            $user = DB::table('users')->where('id', $userId)->first();
+            if (!$user) {
+                return back()->with('error', 'User not found!');
+            }
+            $newStatus = $user->is_active ? 0 : 1;
+            DB::table('users')->where('id', $userId)->update([
+                'is_active' => $newStatus,
+                'updated_at' => now(),
+            ]);
+            $statusStr = $newStatus ? 'activated' : 'deactivated';
+            return back()->with('success', "Student account {$statusStr} successfully.");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error toggling active status: ' . $e->getMessage());
+        }
+    }
+
+    public function adminUserToggleVerified($userId)
+    {
+        try {
+            $user = DB::table('users')->where('id', $userId)->first();
+            if (!$user) {
+                return back()->with('error', 'User not found!');
+            }
+            $newStatus = $user->is_verified ? 0 : 1;
+            DB::table('users')->where('id', $userId)->update([
+                'is_verified' => $newStatus,
+                'updated_at' => now(),
+            ]);
+            $statusStr = $newStatus ? 'verified' : 'unverified';
+            return back()->with('success', "Student account set to {$statusStr} successfully.");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error toggling verification: ' . $e->getMessage());
         }
     }
 }

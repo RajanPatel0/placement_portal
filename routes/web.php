@@ -184,6 +184,8 @@ Route::delete('/admin/testimonials/destroy/{id}', [AdminController::class, 'test
    Route::get('/admin/user-profile/{userId}/edit', [AdminController::class, 'adminUserProfileEditShow'])->name('admin.user.profile.edit');
     Route::post('/admin/user-profile/{userId}/update', [AdminController::class, 'adminUserProfileUpdate'])->name('admin.user.profile.update');
     Route::delete('/admin/user-profile/{userId}/delete', [AdminController::class, 'adminUserProfileDelete'])->name('admin.user.profile.delete');
+    Route::post('/admin/users/{userId}/toggle-active', [AdminController::class, 'adminUserToggleActive'])->name('admin.user.toggle-active');
+    Route::post('/admin/users/{userId}/toggle-verified', [AdminController::class, 'adminUserToggleVerified'])->name('admin.user.toggle-verified');
 
    Route::get('/admin/announcements', [AdminController::class, 'renderAdminAnnouncementsDashboard'])->name('admin.announcements.index');
    Route::get('/admin/announcements/create', [AdminController::class, 'displayAnnouncementCreationForm'])->name('admin.announcements.create');

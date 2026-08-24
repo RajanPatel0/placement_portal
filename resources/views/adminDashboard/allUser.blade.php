@@ -114,7 +114,9 @@
         .filter-label {
             display: block;
             margin-bottom: 5px;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 0.82rem;
+            color: #495057;
         }
         .count-display {
             display: block;
@@ -223,9 +225,9 @@
     {{-- FILTER SECTION --}}
     <div class="row mb-4 filter-row">
         {{-- Gender Filter --}}
-        <div class="col-md-2">
+        <div class="col-md">
             <label class="filter-label">Gender</label>
-            <select id="filterGender" class="form-control">
+            <select id="filterGender" class="form-control select-sm">
                 <option value="">All</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -236,7 +238,7 @@
         {{-- College Filter --}}
         <div class="col-md-2">
             <label class="filter-label">College</label>
-            <select id="filterCollege" class="form-control">
+            <select id="filterCollege" class="form-control select-sm">
                 <option value="">All Colleges</option>
                 @foreach($colleges as $college)
                     <option value="{{ strtolower($college->name) }}" data-college-id="{{ $college->id }}">
@@ -249,7 +251,7 @@
         {{-- Course Filter --}}
         <div class="col-md-2">
             <label class="filter-label">Course</label>
-            <select id="filterCourse" class="form-control">
+            <select id="filterCourse" class="form-control select-sm" disabled>
                 <option value="">All Courses</option>
                 @foreach($courses as $course)
                     <option value="{{ strtolower($course->name) }}" data-college-id="{{ $course->college_id }}" data-course-id="{{ $course->id }}">
@@ -262,7 +264,7 @@
         {{-- Department Filter --}}
         <div class="col-md-2">
             <label class="filter-label">Department</label>
-            <select id="filterDepartment" class="form-control">
+            <select id="filterDepartment" class="form-control select-sm" disabled>
                 <option value="">All Departments</option>
                 @foreach($departments as $dept)
                     <option value="{{ strtolower($dept->name) }}" data-course-id="{{ $dept->courses_id }}">
@@ -273,9 +275,9 @@
         </div>
 
         {{-- Year Filter --}}
-        <div class="col-md-2">
+        <div class="col-md">
             <label class="filter-label">Passing Year</label>
-            <select id="filterYear" class="form-control">
+            <select id="filterYear" class="form-control select-sm">
                 <option value="">All Years</option>
                 @foreach($years as $year)
                     <option value="{{ $year }}">{{ $year }}</option>
@@ -283,10 +285,30 @@
             </select>
         </div>
 
+        {{-- Active Status Filter --}}
+        <div class="col-md">
+            <label class="filter-label">Active Status</label>
+            <select id="filterActive" class="form-control select-sm">
+                <option value="">All Status</option>
+                <option value="1">Active</option>
+                <option value="0">Inactive</option>
+            </select>
+        </div>
+
+        {{-- Verification Status Filter --}}
+        <div class="col-md">
+            <label class="filter-label">Verification</label>
+            <select id="filterVerified" class="form-control select-sm">
+                <option value="">All Verification</option>
+                <option value="1">Verified</option>
+                <option value="0">Unverified</option>
+            </select>
+        </div>
+
         {{-- Clear Filters Button --}}
-        <div class="col-md-2 d-flex align-items-end">
-            <button class="btn btn-outline-danger w-100" id="clearFilters">
-                <i class="fas fa-times-circle"></i> Clear All Filters
+        <div class="col-md d-flex align-items-end">
+            <button class="btn btn-outline-danger w-100" id="clearFilters" style="padding: 0.375rem 0.5rem; font-size: 0.85rem;">
+                <i class="fas fa-times-circle"></i> Clear Filters
             </button>
         </div>
     </div>
@@ -307,13 +329,15 @@
                     <th>Department</th>
                     <th>City</th>
                     <th>State</th>
+                    <th>Status</th>
+                    <th>Verified</th>
                     <th width="80">Actions</th>
                 </tr>
             </thead>
 
             <tbody>
                 @foreach($users as $index => $user)
-                    <tr data-user-id="{{ $user->id }}">
+                    <tr data-user-id="{{ $user->id }}" data-is-active="{{ $user->is_active }}" data-is-verified="{{ $user->is_verified }}">
                         <td>{{ $index + 1 }}</td>
                         <td class="searchable-name">{{ $user->name }}</td>
                         <td class="searchable-email">{{ $user->email }}</td>
@@ -326,6 +350,22 @@
                         <td class="searchable-department">{{ $user->department_name ?? '-' }}</td>
                         <td class="searchable-city">{{ $user->city ?? '-' }}</td>
                         <td class="searchable-state">{{ $user->state ?? '-' }}</td>
+                        <td class="text-center">
+                            <form method="POST" action="{{ route('admin.user.toggle-active', $user->id) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-xs btn-{{ $user->is_active ? 'success' : 'danger' }}" title="Click to Toggle Status">
+                                    {{ $user->is_active ? 'Active' : 'Inactive' }}
+                                </button>
+                            </form>
+                        </td>
+                        <td class="text-center">
+                            <form method="POST" action="{{ route('admin.user.toggle-verified', $user->id) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-xs btn-{{ $user->is_verified ? 'primary' : 'warning' }}" title="Click to Toggle Verification">
+                                    {{ $user->is_verified ? 'Verified' : 'Unverified' }}
+                                </button>
+                            </form>
+                        </td>
                         <td class="text-center">
                             <div class="btn-group">
                                 <a href="{{ route('admin.user.profile', $user->id) }}"
@@ -362,6 +402,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const filterCourse = document.getElementById("filterCourse");
     const filterDepartment = document.getElementById("filterDepartment");
     const filterYear = document.getElementById("filterYear");
+    const filterActive = document.getElementById("filterActive");
+    const filterVerified = document.getElementById("filterVerified");
     const searchInput = document.getElementById("searchInput");
     const clearSearch = document.getElementById("clearSearch");
     const clearFilters = document.getElementById("clearFilters");
@@ -375,6 +417,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const usersData = Array.from(rows).map((row, index) => {
         return {
             id: row.getAttribute('data-user-id'),
+            isActive: row.getAttribute('data-is-active'),
+            isVerified: row.getAttribute('data-is-verified'),
             index: index + 1,
             name: row.querySelector(".searchable-name").innerText,
             email: row.querySelector(".searchable-email").innerText,
@@ -399,7 +443,9 @@ document.addEventListener("DOMContentLoaded", function () {
             college: filterCollege.value,
             course: filterCourse.value,
             department: filterDepartment.value,
-            year: filterYear.value
+            year: filterYear.value,
+            active: filterActive.value,
+            verified: filterVerified.value
         };
     }
 
@@ -407,45 +453,50 @@ document.addEventListener("DOMContentLoaded", function () {
     function areFiltersActive() {
         const filters = getCurrentFilters();
         return filters.search || filters.gender || filters.college || 
-               filters.course || filters.department || filters.year;
+               filters.course || filters.department || filters.year ||
+               filters.active || filters.verified;
     }
 
     // Function to filter courses based on selected college
     function filterCoursesByCollege(selectedCollegeId) {
         const courseSelect = document.getElementById('filterCourse');
-        const currentValue = courseSelect.value;
-        
-        Array.from(courseSelect.options).forEach(option => {
-            option.classList.remove('filter-hidden');
-        });
+        const deptSelect = document.getElementById('filterDepartment');
         
         if (!selectedCollegeId) {
-            if (currentValue) courseSelect.value = currentValue;
+            courseSelect.value = '';
+            courseSelect.disabled = true;
+            deptSelect.value = '';
+            deptSelect.disabled = true;
+            
+            Array.from(courseSelect.options).forEach(option => {
+                if (option.value !== '') {
+                    option.hidden = true;
+                    option.disabled = true;
+                }
+            });
             return;
         }
         
-        let hasVisibleOptions = false;
+        courseSelect.disabled = false;
+        
         Array.from(courseSelect.options).forEach(option => {
             if (option.value === '') {
-                option.classList.remove('filter-hidden');
-                hasVisibleOptions = true;
+                option.hidden = false;
+                option.disabled = false;
             } else {
                 const courseCollegeId = option.getAttribute('data-college-id');
                 if (courseCollegeId === selectedCollegeId) {
-                    option.classList.remove('filter-hidden');
-                    hasVisibleOptions = true;
+                    option.hidden = false;
+                    option.disabled = false;
                 } else {
-                    option.classList.add('filter-hidden');
+                    option.hidden = true;
+                    option.disabled = true;
                 }
             }
         });
         
         const selectedOption = courseSelect.options[courseSelect.selectedIndex];
-        if (selectedOption.classList.contains('filter-hidden')) {
-            courseSelect.value = '';
-        }
-        
-        if (!hasVisibleOptions && currentValue) {
+        if (selectedOption && (selectedOption.disabled || selectedOption.hidden)) {
             courseSelect.value = '';
         }
     }
@@ -453,39 +504,40 @@ document.addEventListener("DOMContentLoaded", function () {
     // Function to filter departments based on selected course
     function filterDepartmentsByCourse(selectedCourseId) {
         const deptSelect = document.getElementById('filterDepartment');
-        const currentValue = deptSelect.value;
-        
-        Array.from(deptSelect.options).forEach(option => {
-            option.classList.remove('filter-hidden');
-        });
         
         if (!selectedCourseId) {
-            if (currentValue) deptSelect.value = currentValue;
+            deptSelect.value = '';
+            deptSelect.disabled = true;
+            
+            Array.from(deptSelect.options).forEach(option => {
+                if (option.value !== '') {
+                    option.hidden = true;
+                    option.disabled = true;
+                }
+            });
             return;
         }
         
-        let hasVisibleOptions = false;
+        deptSelect.disabled = false;
+        
         Array.from(deptSelect.options).forEach(option => {
             if (option.value === '') {
-                option.classList.remove('filter-hidden');
-                hasVisibleOptions = true;
+                option.hidden = false;
+                option.disabled = false;
             } else {
                 const deptCourseId = option.getAttribute('data-course-id');
                 if (deptCourseId === selectedCourseId) {
-                    option.classList.remove('filter-hidden');
-                    hasVisibleOptions = true;
+                    option.hidden = false;
+                    option.disabled = false;
                 } else {
-                    option.classList.add('filter-hidden');
+                    option.hidden = true;
+                    option.disabled = true;
                 }
             }
         });
         
         const selectedOption = deptSelect.options[deptSelect.selectedIndex];
-        if (selectedOption.classList.contains('filter-hidden')) {
-            deptSelect.value = '';
-        }
-        
-        if (!hasVisibleOptions && currentValue) {
+        if (selectedOption && (selectedOption.disabled || selectedOption.hidden)) {
             deptSelect.value = '';
         }
     }
@@ -498,6 +550,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const courseVal = filterCourse.value.toLowerCase();
         const departmentVal = filterDepartment.value.toLowerCase();
         const yearVal = filterYear.value.toLowerCase();
+        const activeVal = filterActive.value;
+        const verifiedVal = filterVerified.value;
         
         return usersData.filter(rowData => {
             if (searchTerm) {
@@ -522,6 +576,8 @@ document.addEventListener("DOMContentLoaded", function () {
             if (courseVal && rowData.course.toLowerCase() !== courseVal) return false;
             if (departmentVal && rowData.department.toLowerCase() !== departmentVal) return false;
             if (yearVal && rowData.year.toLowerCase() !== yearVal) return false;
+            if (activeVal !== "" && rowData.isActive !== activeVal) return false;
+            if (verifiedVal !== "" && rowData.isVerified !== verifiedVal) return false;
             
             return true;
         });
@@ -631,11 +687,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const collegeId = selectedOption.getAttribute('data-college-id');
         
         filterCoursesByCollege(collegeId);
-        filterDepartment.value = '';
-        Array.from(filterDepartment.options).forEach(option => {
-            option.classList.remove('filter-hidden');
-        });
-        
         applyAllFilters();
     });
 
@@ -729,17 +780,13 @@ document.addEventListener("DOMContentLoaded", function () {
     function clearAllFilters() {
         filterGender.value = "";
         filterCollege.value = "";
-        filterCourse.value = "";
-        filterDepartment.value = "";
         filterYear.value = "";
+        filterActive.value = "";
+        filterVerified.value = "";
         searchInput.value = "";
         
-        Array.from(filterCourse.options).forEach(option => {
-            option.classList.remove('filter-hidden');
-        });
-        Array.from(filterDepartment.options).forEach(option => {
-            option.classList.remove('filter-hidden');
-        });
+        filterCoursesByCollege("");
+        filterDepartmentsByCourse("");
         
         applyAllFilters();
         searchInput.focus();
@@ -748,6 +795,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Event listeners
     filterGender.addEventListener("change", applyAllFilters);
     filterYear.addEventListener("change", applyAllFilters);
+    filterActive.addEventListener("change", applyAllFilters);
+    filterVerified.addEventListener("change", applyAllFilters);
     searchInput.addEventListener("input", function() {
         applyAllFilters();
     });
@@ -759,6 +808,8 @@ document.addEventListener("DOMContentLoaded", function () {
     clearFilters.addEventListener("click", clearAllFilters);
 
     // Initialize on page load
+    filterCoursesByCollege(filterCollege.value);
+    filterDepartmentsByCourse(filterCourse.value);
     initializeCounts();
 });
 </script>

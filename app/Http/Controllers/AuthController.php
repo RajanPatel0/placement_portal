@@ -647,7 +647,8 @@ if ($driveDate->startOfDay()->lt($now)) {
                 'email' => $sessionEmail,
                 'phone' => $request->input('phone'),
                 'password' => Hash::make($request->input('password')),
-                'is_active' => 1
+                'is_active' => 1,
+                'is_verified' => 0
             ]);
 
             session()->forget(['otp', 'email']);
@@ -672,7 +673,24 @@ if ($driveDate->startOfDay()->lt($now)) {
 
             if (!$user || !isset($user->role)) {
                 auth()->logout();
-                return back()->withErrors(['message' => 'User role is not defined. Please contact the administrator.']);
+                return back()->withErrors(['email' => 'User role is not defined. Please contact the administrator.']);
+            }
+
+            // Check activation and verification status
+            if ($user->role === 'user') {
+                if (!$user->is_verified) {
+                    auth()->logout();
+                    return back()->withErrors(['email' => 'Your profile is not verified yet. Please contact the administrator.']);
+                }
+                if (!$user->is_active) {
+                    auth()->logout();
+                    return back()->withErrors(['email' => 'Your account is inactive. Please contact the administrator.']);
+                }
+            } elseif ($user->role === 'placement_officer') {
+                if (!$user->is_active) {
+                    auth()->logout();
+                    return back()->withErrors(['email' => 'Your account is inactive. Please contact the administrator.']);
+                }
             }
 
             switch ($user->role) {
